@@ -1,0 +1,42 @@
+#include <stdio.h>
+#include <ctype.h>
+
+int modInverse(int a, int m) {
+    a = a % m;
+    for (int x = 1; x < m; x++)
+        if ((a * x) % m == 1)
+            return x;
+    return -1;
+}
+
+void affineEncrypt(char plaintext[], int a, int b) {
+    int len = strlen(plaintext);
+
+    for (int i = 0; i < len; i++) {
+        if (isalpha(plaintext[i])) {
+            int p = toupper(plaintext[i]) - 'A';
+            int c = (a * p + b) % 26;
+            printf("%c", c + 'A');
+        } else {
+            printf("%c", plaintext[i]);
+        }
+    }
+}
+
+int main() {
+    char plaintext[] = "HELLO WORLD";
+    int a = 5; // Value of a (should be coprime with 26)
+    int b = 8; // Value of b
+
+    printf("Original: %s\n", plaintext);
+    printf("a: %d\n", a);
+    printf("b: %d\n", b);
+
+    if (modInverse(a, 26) == -1) {
+        printf("Invalid value of 'a'. It should be coprime with 26.\n");
+        return 1;
+    }
+
+    printf("Encrypted: ");
+    affineEncrypt(plaintext, a, b);
+   
