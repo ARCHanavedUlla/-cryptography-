@@ -1,0 +1,50 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define ALPHABET_SIZE 26
+
+void decryptMonoalphabetic(const char *ciphertext, char *plaintext, const char *key) {
+    int length = strlen(ciphertext);
+
+    for (int i = 0; i < length; i++) {
+        if (isalpha(ciphertext[i])) {
+            char uppercaseChar = toupper(ciphertext[i]);
+            int index = uppercaseChar - 'A';
+            plaintext[i] = islower(ciphertext[i]) ? tolower(key[index]) : key[index];
+        } else {
+            plaintext[i] = ciphertext[i];
+        }
+    }
+    plaintext[length] = '\0';
+}
+
+int main() {
+    const char *ciphertext = "Wklv lv d whvw phvvdjh.";
+    const char *knownPlaintext = "This is a test message.";
+    const char *alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    
+    char potentialKey[ALPHABET_SIZE + 1];
+
+    printf("Ciphertext: %s\n", ciphertext);
+    printf("Known Plaintext: %s\n", knownPlaintext);
+
+    for (int shift = 0; shift < ALPHABET_SIZE; shift++) {
+        for (int i = 0; i < ALPHABET_SIZE; i++) {
+            int newIndex = (i + shift) % ALPHABET_SIZE;
+            potentialKey[i] = alphabet[newIndex];
+        }
+        potentialKey[ALPHABET_SIZE] = '\0';
+
+        char decryptedText[strlen(ciphertext) + 1];
+        decryptMonoalphabetic(ciphertext, decryptedText, potentialKey);
+
+        if (strcmp(decryptedText, knownPlaintext) == 0) {
+            printf("Potential Key: %s\n", potentialKey);
+            printf("Decrypted Text: %s\n", decryptedText);
+            break;
+        }
+    }
+
+    return 0;
+}
