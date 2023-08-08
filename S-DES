@@ -1,0 +1,81 @@
+#include <stdio.h>
+#include <stdint.h>
+
+uint8_t permutation(uint8_t input, const int *permutationTable, int size) {
+    uint8_t output = 0;
+    for (int i = 0; i < size; i++) {
+        output <<= 1;
+        output |= ((input >> (8 - permutationTable[i])) & 1);
+    }
+    return output;
+}
+
+uint8_t sbox(uint8_t input, const uint8_t *sBoxTable) {
+    uint8_t row = ((input & 0x01) << 1) | ((input & 0x08) >> 2);
+    uint8_t col = (input & 0x06) >> 1;
+    return sBoxTable[row * 4 + col];
+}
+
+uint8_t fFunction(uint8_t r, uint8_t subKey) {
+    int expansionPermutationTable[8] = {4, 1, 2, 3, 2, 3, 4, 1};
+    int sboxPermutationTable[4] = {2, 4, 3, 1};
+    uint8_t expandedR = permutation(r, expansionPermutationTable, 8) ^ subKey;
+    uint8_t sBoxInput = expandedR & 0x0F;
+    uint8_t sBoxOutput = sbox(sBoxInput, SBOX1);
+    return permutation(sBoxOutput, sboxPermutationTable, 4);
+}
+
+uint8_t sdesEncrypt(uint8_t plaintext, uint16_t key) {
+    uint8_t key1 = key >> 8;
+    uint8_t key2 = key & 0xFF;
+
+    uint8_t ipTable[8] = {2, 6, 3, 1, 4, 8, 5, 7};
+    uint8_t invIpTable[8] = {4, 1, 3, 5, 7, 2, 8, 6};
+
+    uint8_t l0 = (plaintext >> 4) & 0x0F;
+    uint8_t r0 = plaintext & 0x0F;
+
+    uint8_t l1 = r0;
+    uint8_t r1 = l0 ^ fFunction(r0, key1);
+
+    uint8_t l2 = r1;
+    uint8_t r2 = l1 ^ fFunction(r1, key2);
+
+    uint8_t ciphertext = (r2 << 4) | l2;
+    return permutation(ciphertext, invIpTable, 8);
+}
+
+uint8_t sdesDecrypt(uint8_t ciphertext, uint16_t key) {
+    uint8_t key1 = key >> 8;
+    uint8_t key2 = key & 0xFF;
+
+    uint8_t ipTable[8] = {2, 6, 3, 1, 4, 8, 5, 7};
+    uint8_t invIpTable[8] = {4, 1, 3, 5, 7, 2, 8, 6};
+
+    uint8_t l2 = (ciphertext >> 4) & 0x0F;
+    uint8_t r2 = ciphertext & 0x0F;
+
+    uint8_t r1 = l2;
+    uint8_t l1 = r2 ^ fFunction(l2, key2);
+
+    uint8_t r0 = l1;
+    uint8_t l0 = r1 ^ fFunction(l1, key1);
+
+    uint8_t plaintext = (l0 << 4) | r0;
+    return permutation(plaintext, invIpTable, 8);
+}
+
+int main() {
+    uint16_t key = 0x7D;
+    uint8_t plaintext = 0x23;
+
+    printf("Plaintext: %04x\n", plaintext);
+    
+    uint8_t ciphertext = sdesEncrypt(plaintext, key);
+    printf("Ciphertext: %04x\n", ciphertext);
+    
+    uint8_t decryptedText = sdesDecrypt(ciphertext, key);
+    printf("Decrypted Text: %04x\n", decryptedText);
+
+    return 0;
+}
